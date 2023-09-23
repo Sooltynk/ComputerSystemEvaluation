@@ -1,0 +1,65 @@
+/DECLARE/ QUEUE CPU,DISC,TERMINAL;
+	  REAL PROB1(2)=(7.,8.);
+          REAL TTR1,TOTAL,WORK;
+          INTEGER I,N1;
+          REAL D_CPU, D_DISC, D_TOTAL, N_STAR, T_CPU, T_DISC, R, REFLEX;
+	  STRING DB;
+/STATION/ NAME=CPU;
+&         SCHED=PS;
+          SERVICE=EXP(0.03);
+          TRANSIT=DISC,PROB1(2),TERMINAL,1;
+/STATION/ NAME=DISC;
+          SERVICE=EXP(0.1);
+          TRANSIT=CPU,PROB1(1);
+/STATION/ NAME=TERMINAL;
+          TYPE=INFINITE;
+          INIT=N1;
+          SERVICE=EXP(8.);
+          TRANSIT=CPU;
+/CONTROL/ CLASS=ALL QUEUE;
+/EXEC/     FOR N1:=1 STEP 1 UNTIL 30 DO
+          BEGIN
+            PRINT(""); 
+            PRINT("NUMERO DE USUARIOS=",N1);
+            SOLVE;
+	    PRINT("");
+            D_CPU := MSERVICE(CPU) * PROB1(2);  
+            D_DISC := MSERVICE(DISC) * PROB1(1);  
+            D_TOTAL := D_CPU + D_DISC;  
+            IF D_CPU > D_DISC
+            THEN BEGIN
+              N_STAR := (D_TOTAL + MRESPONSE(TERMINAL)) / (D_CPU);
+              DB := "CPU";
+            END
+            ELSE BEGIN
+              N_STAR := (D_TOTAL + MRESPONSE(TERMINAL)) / (D_DISC);
+              DB := "DISC";
+            END;
+            PRINT("");
+	    PRINT("====================================================");
+            PRINT("                     APARTADO A                     ");
+	    PRINT("===================================================="); 
+            PRINT("NUMERO DE USUARIOS=",N1);
+            PRINT("DEMANDA CPU=",D_CPU,"s");
+            PRINT("DEMANDA DISCO=",D_DISC,"s");
+            PRINT("DEMANDA TOTAL=",D_TOTAL,"s");
+            PRINT("CUELLO DE BOTELLA=",DB);
+            PRINT("PUNTO DE SATURACION=",N_STAR," trabajos");
+	    PRINT("");
+	    PRINT("====================================================");
+            PRINT("                     APARTADO B                     ");
+	    PRINT("====================================================");  
+            R:=(PROB1(2)*MRESPONSE(CPU))+(PROB1(1)*MRESPONSE(DISC));
+	    PRINT("EL TIEMPO DE RESPUESTA DEL SISTEMA (R)=",R:10:4,"s");
+	    PRINT("PRODUCTIVIDAD DEL SISTEMA= ",MTHRUPUT(TERMINAL));
+	    TOTAL:=(R+MRESPONSE(TERMINAL));
+	    PRINT("EL TIEMPO TOTAL (R+Z)=",TOTAL:10:4,"s");
+	    PRINT("");
+	    REFLEX:=(MTHRUPUT(TERMINAL))*(MRESPONSE(TERMINAL));
+	    PRINT("NÚMERO DE USUARIOS REFLEXIONANDO=",REFLEX:10:4);
+            WORK:=(N1-REFLEX);
+	    PRINT("NÚMERO DE USUARIOS TRABAJANDO=",WORK:10:4);
+          END;
+/END/
+
+
